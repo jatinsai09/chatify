@@ -3,6 +3,7 @@ import { generateToken } from "../lib/utils.js";
 import User from "../models/User.js";
 import bcrypt from "bcryptjs";
 import { ENV } from "../lib/env.js";
+import cloudinary from "../lib/cloudinary.js";
 
 export const signup = async (req, res) => {
   const { fullName, email, password } = req.body;
@@ -105,3 +106,5 @@ export const logout = (_, res) => {
   res.cookie("jwt", "", { maxAge: 0 });
   res.status(200).json({ message: "Logged out successfully" });
 };
+
+export const updateProfile = async (req, res) => {};
