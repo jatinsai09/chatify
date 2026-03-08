@@ -69,9 +69,9 @@ export const useChatStore = create((set, get) => ({
       text: messageData.text,
       image: messageData.image,
       createdAt: new Date().toISOString(),
-      isOptimistic: true, // flag to identify optimistic messages (optional)
+      isOptimistic: true,
     };
-    // immidetaly update the ui by adding the message
+    // immidetaly update the ui
     set({ messages: [...messages, optimisticMessage] });
 
     try {
@@ -81,8 +81,10 @@ export const useChatStore = create((set, get) => ({
       );
       set({ messages: messages.concat(res.data) });
     } catch (error) {
-      // remove optimistic message on failure
-      set({ messages: messages });
+      // rollback UI update
+      const currentMessages = get().messages;
+      set({ messages: currentMessages.filter((msg) => msg._id !== tempId) });
+
       toast.error(error.response?.data?.message || "Something went wrong");
     }
   },
