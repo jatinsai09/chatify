@@ -71,15 +71,21 @@ export const useChatStore = create((set, get) => ({
       createdAt: new Date().toISOString(),
       isOptimistic: true,
     };
-    // immidetaly update the ui
+    // immediately update the ui
     set({ messages: [...messages, optimisticMessage] });
 
     try {
+      const currentMessages = get().messages;
       const res = await axiosInstance.post(
         `/messages/send/${selectedUser._id}`,
         messageData,
       );
-      set({ messages: messages.concat(res.data) });
+
+      set({
+        messages: currentMessages.map((msg) =>
+          msg._id === tempId ? res.data : msg,
+        ),
+      });
     } catch (error) {
       // rollback UI update
       const currentMessages = get().messages;
