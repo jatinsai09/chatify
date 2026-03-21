@@ -49,10 +49,26 @@ export const useChatStore = create((set, get) => ({
     try {
       const res = await axiosInstance.get(`/messages/${userId}`);
       set({ messages: res.data });
+      // Mark messages from this user as read now that we've opened the chat
+      get().markMessagesAsRead(userId);
     } catch (error) {
       toast.error(error.response?.data?.message || "Something went wrong");
     } finally {
       set({ isMessagesLoading: false });
+    }
+  },
+
+  markMessagesAsRead: async (senderId) => {
+    try {
+      await axiosInstance.put(`/messages/read/${senderId}`);
+      // Update local state: mark received messages as read
+      set({
+        messages: get().messages.map((msg) =>
+          msg.senderId === senderId ? { ...msg, read: true } : msg,
+        ),
+      });
+    } catch (error) {
+      console.error("Error marking messages as read:", error);
     }
   },
 
@@ -109,6 +125,9 @@ export const useChatStore = create((set, get) => ({
       const currentMessages = get().messages;
       set({ messages: [...currentMessages, newMessage] });
 
+      // Auto-mark new incoming messages as read since the chat is open
+      get().markMessagesAsRead(newMessage.senderId);
+
       if (isSoundEnabled) {
         const notificationSound = new Audio("/sounds/notification.mp3");
 
@@ -118,10 +137,24 @@ export const useChatStore = create((set, get) => ({
           .catch((e) => console.log("Audio play failed:", e));
       }
     });
+
+    // When the other user has read our messages, update local state
+    socket.on("messagesRead", ({ byUserId }) => {
+      const { selectedUser: currentSelectedUser } = get();
+      if (currentSelectedUser?._id !== byUserId) return;
+      set({
+        messages: get().messages.map((msg) =>
+          msg.senderId === useAuthStore.getState().authUser._id
+            ? { ...msg, read: true }
+            : msg,
+        ),
+      });
+    });
   },
 
   unsubscribeFromMessages: () => {
     const socket = useAuthStore.getState().socket;
     socket.off("newMessage");
+    socket.off("messagesRead");
   },
 }));

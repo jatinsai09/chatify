@@ -62,11 +62,21 @@ function ChatContainer() {
                     />
                   )}
                   {msg.text && <p className="mt-2">{msg.text}</p>}
-                  <p className="text-xs mt-1 opacity-75 flex items-center gap-1">
+                  <p className="text-xs mt-1 flex items-center gap-1 opacity-80">
                     {new Date(msg.createdAt).toLocaleTimeString(undefined, {
                       hour: "2-digit",
                       minute: "2-digit",
                     })}
+                    {msg.senderId === authUser._id && !msg.isOptimistic && (
+                      <span
+                        className={`text-sm font-black tracking-tighter leading-none transition-colors duration-300 drop-shadow ${
+                          msg.read !== false ? "text-sky-300" : "text-white/100"
+                        }`}
+                        title={msg.read === true ? "Read" : "Sent"}
+                      >
+                        {msg.read === true ? "✓✓" : "✓"}
+                      </span>
+                    )}
                   </p>
                 </div>
               </div>

@@ -82,6 +82,29 @@ export const sendMessage = async (req, res) => {
   }
 };
 
+export const markMessagesAsRead = async (req, res) => {
+  try {
+    const myId = req.user._id;
+    const { senderId } = req.params;
+
+    await Message.updateMany(
+      { senderId, receiverId: myId, read: { $ne: true } },
+      { $set: { read: true } },
+    );
+
+    // Notify the sender in real-time so their UI updates
+    const senderSocketId = getReceiverSocketId(senderId);
+    if (senderSocketId) {
+      io.to(senderSocketId).emit("messagesRead", { byUserId: myId });
+    }
+
+    res.status(200).json({ success: true });
+  } catch (error) {
+    console.log("Error in markMessagesAsRead controller: ", error.message);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
 export const getChatPartners = async (req, res) => {
   try {
     const loggedInUserId = req.user._id;
